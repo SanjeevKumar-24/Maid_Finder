@@ -1,38 +1,31 @@
 const express = require('express');
 const router = express.Router();
-const Helper = require('../models/Helper'); // Import the schema
+const Helper = require('../models/Helper');
 
-// POST a new helper profile to the database
-router.post('/', async (req, res) => {
-    try {
-        const newHelper = new Helper(req.body);
-        const savedHelper = await newHelper.save();
-        res.status(201).json(savedHelper);
-    } catch (error) {
-        res.status(400).json({ error: error.message });
-    }
-});
-
-// GET all verified helpers
+// GET all helpers for the dashboard
 router.get('/', async (req, res) => {
-    try {
-        // Fetch only workers who have passed background checks
-        const helpers = await Helper.find({ isVerified: true });
-        res.json(helpers);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
+  try {
+    const helpers = await Helper.find();
+    res.json(helpers);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
 });
 
-// GET a specific helper by ID
-router.get('/:id', async (req, res) => {
-    try {
-        const helper = await Helper.findById(req.params.id);
-        if (!helper) return res.status(404).json({ message: 'Helper not found' });
-        res.json(helper);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
+// POST route to quickly seed the database
+router.post('/seed', async (req, res) => {
+  const sampleHelpers = [
+    { name: "Aarti Devi", role: "Maid", hourlyRate: 250, monthlyRate: 6000, isVerified: true },
+    { name: "Sunita Sharma", role: "Cook", hourlyRate: 300, monthlyRate: 8000, isVerified: true },
+    { name: "Ramesh Kumar", role: "Cleaner", hourlyRate: 200, monthlyRate: 5000, isVerified: false },
+    { name: "Priya Singh", role: "Nanny", hourlyRate: 400, monthlyRate: 12000, isVerified: true }
+  ];
 
-module.exports = router;
+  try {
+    await Helper.deleteMany(); // Clears old data to prevent duplicates
+    const insertedHelpers = await Helper.insertMany(sampleHelpers);
+    res.status(201).json(insertedHelpers);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
